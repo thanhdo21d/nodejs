@@ -2,6 +2,45 @@
 
 ## Mục tiêu khóa học
 
+
+const getRandomQuestionsFromCategory = async (categoryId, numberOfQuestions) => {
+  const questions = await QuestionModel.aggregate([
+    { $match: { category: mongoose.Types.ObjectId(categoryId) } },
+    { $sample: { size: numberOfQuestions } }
+  ]);
+  return questions;
+};
+
+
+
+createExam: async (req, res) => {
+  const { categoriesWithNumbers } = req.body; // Dạng [{ categoryId: '...', numberOfQuestions: 5 }, ...]
+
+  try {
+    let examQuestions = [];
+    for (const category of categoriesWithNumbers) {
+      const questions = await getRandomQuestionsFromCategory(category.categoryId, category.numberOfQuestions);
+      examQuestions = [...examQuestions, ...questions];
+    }
+
+    // Tạo đề thi mới với các câu hỏi đã lấy
+    const newExam = new ExamModel({
+      questions: examQuestions.map(q => q._id),
+      // ... các thuộc tính khác của đề thi
+    });
+
+    await newExam.save();
+    res.status(201).json(newExam);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+},
+
+
+
+
+
+
 Mình build khóa này dựa trên tiêu chí thực tế của các nhà tuyển dụng ngoài kia.
 
 Vậy nên mục tiêu khóa học này là giúp các bạn apply vào các vị trí **Fresher - Junior Backend Node.js**
